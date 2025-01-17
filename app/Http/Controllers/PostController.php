@@ -33,8 +33,9 @@ class PostController extends Controller
      */
     public function store(Request $request)
     {
-        $foto = $request->foto->store('fotos','public');
+        // $foto = $request->foto->store('fotos','public');
         // //Post::create($request->all());
+        $foto = null;
         $post = Post::create([
             'titulo' => $request->titulo,
             'conteudo' => $request->conteudo,
@@ -44,7 +45,7 @@ class PostController extends Controller
 
         $post->tags()->sync($request->tags);
 
-        return redirect()->route('post.index');
+        return response()->json($post, 201);
     }
 
     /**
