@@ -4,98 +4,99 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Post;
-use App\Models\Categoria;
-use App\Models\Tag;
+use Illuminate\Support\Facades\Validator;
 
 class PostController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
     public function index()
     {
-        $posts = Post::with('comentarios')->get();
-        return response()->json($posts, 201);
+        $posts = Post::all();
+        return response()->json([
+            'Mensagem' => 'Posts listados com sucesso',
+            'dados' => $posts
+        ], 200);
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        $categorias = Categoria::all();
-        $tags = Tag::all();
-        return view('post.cadastrar',compact('categorias','tags'));
-    }
-
-    /**
-     * Store a newly created resource in storage.
-     */
     public function store(Request $request)
     {
-        // $foto = $request->foto->store('fotos','public');
-        // //Post::create($request->all());
-        $foto = null;
-        $post = Post::create([
-            'titulo' => $request->titulo,
-            'conteudo' => $request->conteudo,
-            'foto' => $foto,
-            'categoria_id' => $request->categoria_id
+        $validacao = Validator::make($request->all(), [
+            'titulo' => 'required|string|max:190',
+            'conteudo' => 'required|string',
+            'usuario_id' => 'required|exists:usuarios,id',
         ]);
 
-        $post->tags()->sync($request->tags);
+        if ($validacao->fails()) {
+            return response()->json([
+                'mensagem' => 'Erro de validação',
+                'erros' => $validacao->errors()
+            ], 422);
+        }
 
-        return response()->json($post, 201);
+        $post = Post::create($request->all());
+        return response()->json([
+            'Mensagem' => 'Post cadastrado com sucesso',
+            'dados' => $post
+        ], 201);
     }
 
-    /**
-     * Display the specified resource.
-     */
     public function show(string $id)
     {
         $post = Post::find($id);
-        return response()->json($post, 201);
+        if (!$post) {
+            return response()->json([
+                'Mensagem' => 'Post não encontrado'
+            ], 404);
+        }
+
+        return response()->json([
+            'Mensagem' => 'Post retornado com sucesso',
+            'dados' => $post
+        ], 200);
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(string $id)
-    {
-        $post = Post::find($id);
-        $categorias = Categoria::all();
-        return view('post.editar',compact('post','categorias'));
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
     public function update(Request $request, string $id)
     {
         $post = Post::find($id);
-        $foto = $post->foto;
-        if($request->foto != null){
-            $foto = $request->foto->store('fotos','public');
+
+        if (!$post) {
+            return response()->json([
+                'Mensagem' => 'Post não encontrado'
+            ], 404);
         }
 
+        $validacao = Validator::make($request->all(), [
+            'titulo' => 'required|string|max:190',
+            'conteudo' => 'required|string',
+        ]);
 
+        if ($validacao->fails()) {
+            return response()->json([
+                'mensagem' => 'Erro de validação',
+                'erros' => $validacao->errors()
+            ], 422);
+        }
 
         $post->update([
             'titulo' => $request->titulo,
-            'conteudo' => $request->conteudo,
-            'foto' => $foto,
-            'categoria_id' => $request->categoria_id
+            'conteudo' => $request->conteudo
         ]);
-        return redirect()->route('post.index');
+        return response()->json([
+            'Mensagem' => 'Post atualizado com sucesso',
+            'dados' => $post
+        ], 200);
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
     public function destroy(string $id)
     {
         $post = Post::find($id);
+        if (!$post) {
+            return response()->json([
+                'Mensagem' => 'Post não encontrado'
+            ], 404);
+        }
         $post->delete();
-        return redirect()->route('post.index');
+        return response()->json([
+            'Mensagem' => 'Post removido com sucesso'
+        ], 200);
     }
 }

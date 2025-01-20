@@ -4,65 +4,95 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Tag;
+use Illuminate\Support\Facades\Validator;
 
 class TagController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
     public function index()
     {
         $tags = Tag::all();
-        return response()->json($tags, 201);
+        return response()->json([
+            'Mensagem' => 'Tags listadas com sucesso',
+            'dados' => $tags
+        ], 200);
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        return view('tag.cadastrar');
-    }
-
-    /**
-     * Store a newly created resource in storage.
-     */
     public function store(Request $request)
     {
+        $validacao = Validator::make($request->all(), [
+            'nome' => 'required|string|max:190',
+        ]);
+
+        if ($validacao->fails()) {
+            return response()->json([
+                'mensagem' => 'Erro de validação',
+                'erros' => $validacao->errors()
+            ], 422);
+        }
+
         $tag = Tag::create($request->all());
-        return response()->json($tag, 201);
+        return response()->json([
+            'Mensagem' => 'Tag cadastrada com sucesso',
+            'dados' => $tag
+        ], 201);
     }
 
-    /**
-     * Display the specified resource.
-     */
     public function show(string $id)
     {
         $tag = Tag::find($id);
-        return response()->json($tag, 201);
+        if (!$tag) {
+            return response()->json([
+                'Mensagem' => 'Tag não encontrada'
+            ], 404);
+        }
+
+        return response()->json([
+            'Mensagem' => 'Tag retornada com sucesso',
+            'dados' => $tag
+        ], 200);
     }
 
-
-    /**
-     * Update the specified resource in storage.
-     */
     public function update(Request $request, string $id)
     {
         $tag = Tag::find($id);
 
+        if (!$tag) {
+            return response()->json([
+                'Mensagem' => 'Tag não encontrada'
+            ], 404);
+        }
+
+        $validacao = Validator::make($request->all(), [
+            'nome' => 'required|string|max:190',
+        ]);
+
+        if ($validacao->fails()) {
+            return response()->json([
+                'mensagem' => 'Erro de validação',
+                'erros' => $validacao->errors()
+            ], 422);
+        }
+
         $tag->update([
             'nome' => $request->nome
         ]);
-        return response()->json($tag, 201);
+        return response()->json([
+            'Mensagem' => 'Tag atualizada com sucesso',
+            'dados' => $tag
+        ], 200);
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
     public function destroy(string $id)
     {
         $tag = Tag::find($id);
+        if (!$tag) {
+            return response()->json([
+                'Mensagem' => 'Tag não encontrada'
+            ], 404);
+        }
         $tag->delete();
-        return response()->json("Tag excluída com sucesso!", 201);
+        return response()->json([
+            'Mensagem' => 'Tag removida com sucesso'
+        ], 200);
     }
 }
